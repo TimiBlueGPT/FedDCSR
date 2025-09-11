@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import math
 import numpy as np
-
+import torch
+from collections import OrderedDict
 
 class Server(object):
     def __init__(self, args, init_global_params):
@@ -9,6 +10,29 @@ class Server(object):
         self.global_params = init_global_params
         if args.method == "FedDCSR":
             self.global_reps = None
+        
+
+
+
+    def aggregate_grads(self, clients, random_cids):
+        num_branchs = len(self.global_params)
+        for branch_idx in range(num_branchs):
+            grad_sum = None
+            for c_id in random_cids:
+                current_client_grads = clients[c_id].get_grads()[branch_idx]
+                current_client_grads2 = clients[c_id].get_client_grads()[branch_idx]
+                print("len1=",len(current_client_grads))
+                print("len2=",len(current_client_grads2))
+                if grad_sum is None:
+                    grad_sum = dict((key, value * clients[c_id].train_weight)
+                                    for key, value in current_client_grads.items())
+                else:
+                    for key in grad_sum.keys():
+                        grad_sum[key] += clients[c_id].train_weight * \
+                            current_client_grads[key]
+            for key in self.global_params[branch_idx].keys():
+                self.global_params[branch_idx][key] -= self.args.lr * grad_sum[key]
+
 
     def aggregate_params(self, clients, random_cids):
         """Sums up parameters of models shared by all active clients at each
@@ -21,6 +45,7 @@ class Server(object):
         # Record the model parameter aggregation results of each branch
         # separately
         num_branchs = len(self.global_params)
+        print(num_branchs)
         for branch_idx in range(num_branchs):
             client_params_sum = None
             for c_id in random_cids:

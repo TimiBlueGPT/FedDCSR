@@ -5,6 +5,7 @@ import random
 import argparse
 import torch
 from trainer import ModelTrainer
+
 import logging
 from client import Client
 from server import Server
@@ -54,7 +55,7 @@ def arg_parse():
     parser.add_argument("--decay_epoch", type=int, default=10,
                         help="Decay learning rate after this epoch.")
     parser.add_argument("--batch_size", type=int,
-                        default=256, help="Training batch size.")
+                        default=512, help="Training batch size.")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--eval_interval", type=int,
                         default=1, help="Interval of evalution")
@@ -132,6 +133,7 @@ def init_logger(args):
 
 def main():
     args = arg_parse()
+    torch.autograd.set_detect_anomaly(True)
 
     seed_everything(args)
 

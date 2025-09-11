@@ -14,7 +14,7 @@ def evaluation_logging(eval_logs, round, weights, mode="valid"):
     for metric_name in list(eval_logs.values())[0].keys():
         avg_eval_val = 0
         for domain in eval_logs.keys():
-            avg_eval_val += eval_logs[domain][metric_name] * weights[domain]
+            avg_eval_val = avg_eval_val + eval_logs[domain][metric_name] * weights[domain]
         avg_eval_log[metric_name] = avg_eval_val
 
     logging.info("MRR: %.4f" % avg_eval_log["MRR"])
@@ -68,7 +68,7 @@ def run_fl(clients, server, args):
                     round, args, global_params=server.global_params)
 
             if "Fed" in args.method:
-                server.aggregate_params(clients, random_cids)
+                server.aggregate_grads(clients, random_cids)
                 if args.method == "FedDCSR":
                     server.aggregate_reps(clients, random_cids)
 

@@ -114,7 +114,7 @@ class ModelTrainer(Trainer):
                 aug_seqs=contrast_aug_seqs)
             # Broadcast in last dim. it well be used to compute `z_g` by
             # federated aggregation later
-            self.z_s[0] *= ground_mask.unsqueeze(-1)
+            self.z_s[0] = self.z_s[0] * ground_mask.unsqueeze(-1)
             loss = self.disen_vgsan_loss_fn(result, result_exclusive, mu_s,
                                             logvar_s,  mu_e, logvar_e,
                                             ground, self.z_s[0], self.z_g[0],
@@ -407,7 +407,7 @@ class ModelTrainer(Trainer):
         # Compute priorKL loss
         if alpha:
             adaptive_alpha_loss = priorKL(alpha).mean()
-            loss += adaptive_alpha_loss
+            loss = loss + adaptive_alpha_loss
         return loss
 
     def kl_anneal_function(self, anneal_cap, step, total_annealing_step):

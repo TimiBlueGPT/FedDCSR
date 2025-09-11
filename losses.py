@@ -52,8 +52,8 @@ class Discriminator(nn.Module):
         self.fc3 = nn.Linear(hidden_size, 1)
 
     def forward(self, input1, input2, ground_mask):
-        input1 *= ground_mask.unsqueeze(-1)  # broadcast in last dim
-        input2 *= ground_mask.unsqueeze(-1)  # broadcast in last dim
+        input1 = input1 * ground_mask.unsqueeze(-1)  # broadcast in last dim
+        input2 = input2 * ground_mask.unsqueeze(-1)  # broadcast in last dim
         # (batch_size, seq_len * hidden_size)
         input1 = torch.flatten(input1, start_dim=1)
         # (batch_size, seq_len * hidden_size)

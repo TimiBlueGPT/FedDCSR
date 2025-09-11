@@ -44,6 +44,7 @@ class Client:
         # Model evaluation results
         self.MRR, self.NDCG_5, self.NDCG_10, self.HR_1, self.HR_5, self.HR_10 \
             = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        self.init_global_params = copy.deepcopy(self.get_params())
 
     def train_epoch(self, round, args, global_params=None):
         """Trains one client with its own training data for one epoch.
@@ -132,6 +133,36 @@ class Client:
             NDCG_10 / valid_entity, HR_1 / valid_entity, HR_5 / \
             valid_entity, HR_10 / valid_entity
 
+
+    def get_grads(self):
+        """Returns gradients of the shared model parameters.
+
+        Gradients are computed as the difference between the current model
+        parameters and the global parameters that were used to initialise this
+        client's model at the beginning of the round (stored in
+        ``self.init_global_params``).
+        """
+        assert hasattr(self, "init_global_params"), \
+            "`init_global_params` missing. Did you forget to call `set_global_params`?"
+        current_params = self.get_params()
+        grads = []
+        for branch_idx in range(len(current_params)):
+            branch_grads = {}
+            for key in current_params[branch_idx]:
+                branch_grads[key] = (current_params[branch_idx][key]
+                                     - self.init_global_params[branch_idx][key])
+            grads.append(branch_grads)
+        return grads
+
+    def get_client_grads(self):
+        grads = []
+        for param in self.model.parameters():
+            if param.grad is not None:
+                grads.append(param.grad.clone())
+            else:
+                grads.append(torch.zeros_like(param))
+        return grads
+
     def get_params(self):
         """Returns the model parameters that need to be shared between clients.
         """
@@ -165,6 +196,7 @@ class Client:
         """
         assert (self.method in ["FedDCSR", "FedVGSAN", "FedSASRec", "FedVSAN",
                                 "FedContrastVAE", "FedCL4SRec", "FedDuoRec"])
+        self.init_global_params = copy.deepcopy(global_params)
         if self.method == "FedDCSR":
             self.model.encoder_s.load_state_dict(global_params[0])
         elif self.method == "FedVGSAN":
